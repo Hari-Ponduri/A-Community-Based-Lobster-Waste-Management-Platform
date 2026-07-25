@@ -1,1 +1,0 @@
-# A-Community-Based-Lobster-Waste-Management-Platform
