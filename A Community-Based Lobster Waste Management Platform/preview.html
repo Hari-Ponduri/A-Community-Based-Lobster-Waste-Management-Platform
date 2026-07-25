@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#FAF3EE] text-[#2C1810]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShellCycle — Biomaterial Sourcing & Smart Matching</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #FAF3EE; }
+    .peach-card {
+      background: #FFFFFF;
+      border: 1px solid #F3DEC9;
+      box-shadow: 0 10px 25px -5px rgba(180,100,60,.05), 0 8px 10px -6px rgba(180,100,60,.03);
+    }
+    .btn-peach-primary {
+      background: linear-gradient(135deg, #E06D53 0%, #C85338 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(200,83,56,.25);
+      transition: all .2s;
+    }
+    .btn-peach-primary:hover { background: linear-gradient(135deg, #D45B41 0%, #B3442A 100%); }
+    .btn-peach-secondary {
+      background: linear-gradient(135deg, #D95D39 0%, #B83A1B 100%);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(184,58,27,.25);
+      transition: all .2s;
+    }
+    .btn-peach-secondary:hover { background: linear-gradient(135deg, #C24B28 0%, #A02A0D 100%); }
+    /* Toast notification */
+    #toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      padding: .75rem 1.25rem; border-radius: .75rem;
+      font-size: .875rem; font-weight: 600;
+      display: none; z-index: 9999;
+      box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    }
+    #toast.success { background:#FCE3D9; color:#7A2A10; border:1px solid #F7C5B5; }
+    #toast.error   { background:#FEE2E2; color:#7F1D1D; border:1px solid #FECACA; }
+    /* Spinner */
+    .spinner { display:inline-block; width:1rem; height:1rem; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
+</head>
+<body class="min-h-full flex flex-col bg-[#FAF3EE] text-[#4A332C] selection:bg-[#E06D53] selection:text-white">
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <!-- Server Status Banner -->
+  <div id="server-banner" class="bg-[#FFF5EE] border-b border-[#F3DEC9] px-6 py-2 text-xs font-medium flex items-center gap-2 justify-center text-[#8C736B]">
+    <span id="server-dot" class="inline-block w-2 h-2 rounded-full bg-gray-300"></span>
+    <span id="server-status">Connecting to backend server…</span>
+  </div>
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-[#F0DCD0] bg-white/90 sticky top-0 backdrop-blur-md z-50 shadow-sm">
+    <div class="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3 cursor-pointer" onclick="showView('home')">
+        <img src="lobster.png" alt="ShellCycle Logo" class="h-10 w-auto object-contain">
+        <span class="text-2xl font-extrabold tracking-tight text-[#2C1810]">Shell<span class="text-[#E06D53]">Cycle</span></span>
+      </div>
+      <nav class="flex items-center gap-2">
+        <button onclick="showView('home')" id="nav-home" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-[#9E3D23] bg-[#F5E5DA] border border-[#EBD1C0] shadow-sm">Home</button>
+        <button onclick="showView('restaurant')" id="nav-restaurant" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-[#6E564E] hover:text-[#2C1810] hover:bg-[#F7EBE3]">Suppliers (Restaurants)</button>
+        <button onclick="showView('lab')" id="nav-lab" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-[#6E564E] hover:text-[#2C1810] hover:bg-[#F7EBE3]">Buyers (Research Labs)</button>
+        <button onclick="showView('database')" id="nav-database" class="px-4 py-2 rounded-xl text-sm font-semibold transition-all text-[#6E564E] hover:text-[#2C1810] hover:bg-[#F7EBE3]">📊 Database</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-6xl w-full mx-auto px-6 py-12">
+
+    <!-- ── HOME VIEW ── -->
+    <section id="view-home" class="space-y-16">
+      <div class="text-center max-w-3xl mx-auto space-y-6 pt-8">
+        <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight text-[#2C1810] leading-tight">
+          Turn Seafood Waste into
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#E06D53] via-[#D95D39] to-[#B83A1B]">Sustainable Biomaterials</span>
+        </h1>
+        <p class="text-lg text-[#6E564E] leading-relaxed">
+          ShellCycle connects seafood restaurants generating crustacean shell waste with research labs and biomanufacturers
+          extracting chitosan for biodegradable packaging, medical devices, and agriculture.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center pt-6">
+          <button onclick="showView('restaurant')" class="px-8 py-4 btn-peach-primary font-bold rounded-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+            <span>🍽️</span> Register Shell Waste (Supplier)
+          </button>
+          <button onclick="showView('lab')" class="px-8 py-4 btn-peach-secondary font-bold rounded-xl hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
+            <span>🔬</span> Find Biomaterial Matches (Lab)
+          </button>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+        <div class="peach-card p-6 rounded-2xl">
+          <div class="text-[#E06D53] text-3xl font-extrabold mb-1" id="metric-restaurants">—</div>
+          <div class="text-[#2C1810] font-semibold mb-1">Active Suppliers</div>
+          <div class="text-xs text-[#8C736B]">Registered seafood restaurants with daily/weekly shell yields.</div>
+        </div>
+        <div class="peach-card p-6 rounded-2xl">
+          <div class="text-[#D95D39] text-3xl font-extrabold mb-1" id="metric-capacity">— kg/wk</div>
+          <div class="text-[#2C1810] font-semibold mb-1">Shell Waste Tracked</div>
+          <div class="text-xs text-[#8C736B]">Shrimp, crab, and lobster shells available for extraction.</div>
+        </div>
+        <div class="peach-card p-6 rounded-2xl">
+          <div class="text-[#B83A1B] text-3xl font-extrabold mb-1">Smart Engine</div>
+          <div class="text-[#2C1810] font-semibold mb-1">AI-Powered Matching</div>
+          <div class="text-xs text-[#8C736B]">Deterministic scoring + GPT-4 logistics risk evaluation.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RESTAURANT VIEW ── -->
+    <section id="view-restaurant" class="hidden space-y-8 max-w-2xl mx-auto">
+      <div>
+        <button onclick="showView('home')" class="text-[#E06D53] hover:underline text-sm font-semibold mb-3 inline-block">← Back to Overview</button>
+        <h2 class="text-3xl font-bold text-[#2C1810]">Restaurant Registration</h2>
+        <p class="text-[#6E564E] text-sm mt-1">Register your crustacean shell waste stream — data is saved to <code class="bg-[#F5E5DA] px-1 rounded">database.xlsx</code>.</p>
+      </div>
+
+      <form id="restaurant-form" onsubmit="handleRegisterRestaurant(event)" class="peach-card p-8 rounded-2xl space-y-6">
+        <div>
+          <label class="block text-sm font-semibold text-[#4A332C] mb-2">Restaurant Name *</label>
+          <input type="text" id="rest-name" required placeholder="e.g. Captain Bay Seafood"
+            class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Shell Type *</label>
+            <select id="rest-shell-type" required class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+              <option value="shrimp">Shrimp</option>
+              <option value="crab">Crab</option>
+              <option value="lobster">Lobster</option>
+              <option value="mixed">Mixed Crustaceans</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Weekly Supply (kg) *</label>
+            <input type="number" id="rest-weekly-kg" step="0.1" min="1" required placeholder="e.g. 25"
+              class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Storage Method *</label>
+            <select id="rest-storage" required class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+              <option value="frozen">Frozen (Recommended)</option>
+              <option value="refrigerated">Refrigerated</option>
+              <option value="room_temp">Room Temperature</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Pickup Window *</label>
+            <input type="text" id="rest-pickup" required placeholder="e.g. 6-9 PM Daily"
+              class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-[#4A332C] mb-2">Location / District *</label>
+          <input type="text" id="rest-location" required placeholder="e.g. Harbor District, Dock 4"
+            class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+        </div>
+        <button type="submit" id="submit-btn" class="w-full py-4 btn-peach-primary font-bold rounded-xl">
+          Register Shell Waste Stream
+        </button>
+      </form>
+
+      <!-- Success card -->
+      <div id="register-success" class="hidden peach-card p-8 rounded-2xl border border-[#F5C7B5] bg-[#FFF5F0] space-y-6">
+        <div class="text-center space-y-2">
+          <div class="w-12 h-12 rounded-full bg-[#FCE3D9] text-[#C85338] flex items-center justify-center mx-auto text-2xl font-bold">✓</div>
+          <h3 class="text-2xl font-bold text-[#2C1810]">Registration Successful!</h3>
+          <p class="text-[#6E564E] text-sm" id="success-msg"></p>
+          <p class="text-xs text-[#8C736B]">Row appended to <code class="bg-[#F5E5DA] px-1 rounded">database.xlsx</code></p>
+        </div>
+        <div id="success-details" class="p-4 bg-white rounded-xl border border-[#F0DCD0] text-sm space-y-2 text-[#4A332C]"></div>
+        <div class="flex gap-4">
+          <button onclick="resetRegisterForm()" class="w-full py-3 bg-[#F5E5DA] hover:bg-[#EBD1C0] text-[#2C1810] font-semibold rounded-xl transition-all text-sm">Register Another</button>
+          <button onclick="showView('lab')" class="w-full py-3 btn-peach-primary font-semibold rounded-xl text-sm">Go to Lab Matching →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── LAB VIEW ── -->
+    <section id="view-lab" class="hidden space-y-8 max-w-4xl mx-auto">
+      <div>
+        <button onclick="showView('home')" class="text-[#E06D53] hover:underline text-sm font-semibold mb-3 inline-block">← Back to Overview</button>
+        <h2 class="text-3xl font-bold text-[#2C1810]">Lab Matching & Sourcing Engine</h2>
+        <p class="text-[#6E564E] text-sm mt-1">Specify your chitosan / biomaterial raw material needs to calculate top restaurant matches.</p>
+      </div>
+
+      <form onsubmit="handleLabSearch(event)" class="peach-card p-8 rounded-2xl space-y-6">
+        <h3 class="text-xl font-bold text-[#2C1810] mb-4 flex items-center gap-2"><span>🎯</span> Lab Requirements</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Shell Type Needed *</label>
+            <select id="lab-shell-type" required class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+              <option value="shrimp">Shrimp (High Chitosan Yield)</option>
+              <option value="crab">Crab (Dense Chitin Matrix)</option>
+              <option value="lobster">Lobster (High Mineral Ratio)</option>
+              <option value="mixed">Mixed Shells</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Weekly Needs (kg) *</label>
+            <input type="number" id="lab-weekly-kg" step="0.1" min="1" required value="15"
+              class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Pickup Radius (km) *</label>
+            <input type="number" id="lab-radius" min="1" max="100" required value="15"
+              class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-[#4A332C] mb-2">Pickup Frequency *</label>
+            <select id="lab-frequency" required class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors">
+              <option value="weekly">Weekly Pickup</option>
+              <option value="biweekly">Bi-weekly Pickup</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-semibold text-[#4A332C] mb-2">Research Purpose / Application (Optional)</label>
+          <textarea id="lab-purpose" rows="2" placeholder="e.g. Chitosan extraction for biodegradable food packaging films"
+            class="w-full px-4 py-3 bg-[#FAF3EE] border border-[#EBD1C0] rounded-xl text-[#2C1810] focus:outline-none focus:bg-white focus:border-[#E06D53] transition-colors"></textarea>
+        </div>
+        <button type="submit" class="w-full py-4 btn-peach-secondary font-bold rounded-xl flex items-center justify-center gap-2">
+          <span>⚡</span> Find Optimal Matches
+        </button>
+      </form>
+
+      <!-- Match Results -->
+      <div id="match-results" class="hidden space-y-8">
+        <h3 class="text-2xl font-bold text-[#2C1810]">Match Results</h3>
+        <div id="best-match-card" class="peach-card p-8 rounded-2xl border-2 border-[#E06D53] bg-[#FFF8F4] space-y-4"></div>
+        <div id="other-matches-section" class="space-y-4">
+          <h4 class="text-lg font-bold text-[#2C1810]">Other Compatible Suppliers</h4>
+          <div id="other-matches-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
+        <!-- AI Advisor -->
+        <div class="peach-card p-8 rounded-2xl border border-[#E8C4B4] bg-[#FDF5F0] space-y-6">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">🤖</span>
+              <div>
+                <h4 class="text-xl font-bold text-[#2C1810]">AI Match Advisor</h4>
+                <p class="text-xs text-[#A84830] font-medium">GPT-4 Powered Supply Chain & Logistics Assessment</p>
+              </div>
+            </div>
+            <span class="bg-[#FCE3D9] border border-[#F7C5B5] text-[#9E3D23] px-3 py-1 text-xs font-semibold rounded-full">Active</span>
+          </div>
+          <div id="ai-advisor-content" class="space-y-4 text-sm text-[#4A332C]"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── DATABASE VIEW ── -->
+    <section id="view-database" class="hidden space-y-8 max-w-5xl mx-auto">
+      <div class="flex items-center justify-between">
+        <div>
+          <button onclick="showView('home')" class="text-[#E06D53] hover:underline text-sm font-semibold mb-3 inline-block">← Back to Overview</button>
+          <h2 class="text-3xl font-bold text-[#2C1810]">📊 Database Viewer</h2>
+          <p class="text-[#6E564E] text-sm mt-1">Live data from <code class="bg-[#F5E5DA] px-1 rounded">database.xlsx</code> — all registered suppliers.</p>
+        </div>
+        <button onclick="loadDatabaseView()" class="px-5 py-2.5 btn-peach-primary font-semibold rounded-xl text-sm flex items-center gap-2">
+          ↻ Refresh
+        </button>
+      </div>
+
+      <div id="db-loading" class="peach-card p-12 rounded-2xl text-center text-[#8C736B] text-sm">
+        Loading records from server…
+      </div>
+
+      <div id="db-table-wrap" class="hidden peach-card rounded-2xl overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-[#F5E5DA] text-[#6E2D1B] text-xs uppercase tracking-wider">
+                <th class="px-5 py-3 text-left">#</th>
+                <th class="px-5 py-3 text-left">Restaurant</th>
+                <th class="px-5 py-3 text-left">Shell Type</th>
+                <th class="px-5 py-3 text-left">Qty (kg/wk)</th>
+                <th class="px-5 py-3 text-left">Storage</th>
+                <th class="px-5 py-3 text-left">Pickup Window</th>
+                <th class="px-5 py-3 text-left">Location</th>
+                <th class="px-5 py-3 text-left">Registered At</th>
+              </tr>
+            </thead>
+            <tbody id="db-tbody" class="divide-y divide-[#F3DEC9]"></tbody>
+          </table>
+        </div>
+        <div class="px-5 py-3 bg-[#FFF8F4] border-t border-[#F3DEC9] text-xs text-[#8C736B] flex items-center justify-between">
+          <span id="db-count"></span>
+          <span>Source: <code>database.xlsx</code></span>
+        </div>
+      </div>
+
+      <div id="db-empty" class="hidden peach-card p-12 rounded-2xl text-center">
+        <div class="text-4xl mb-3">📭</div>
+        <p class="text-[#8C736B] font-semibold">No records yet.</p>
+        <p class="text-xs text-[#8C736B] mt-1">Register a supplier first to see data here.</p>
+      </div>
+
+      <div id="db-error" class="hidden peach-card p-8 rounded-2xl border border-red-200 bg-red-50 text-center text-red-700 text-sm space-y-2">
+        <div class="text-2xl">⚠️</div>
+        <p class="font-semibold">Could not reach backend server.</p>
+        <p class="text-xs">Make sure <code>server.py</code> is running on <strong>http://localhost:5000</strong></p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    /* ──────────────────────────────────────────────
+       Config
+    ────────────────────────────────────────────── */
+    const API = "http://localhost:5000/api";
+
+    /* Seed data (in-memory fallback for matching when server is offline) */
+    const seedRestaurants = [
+      { id:"seed-1", name:"Bag O' Crab - Downtown",    shellType:"crab",    weeklyKg:15, storage:"frozen",       pickupWindow:"6-9 PM",  location:"Downtown District" },
+      { id:"seed-2", name:"Red Lobster - Waterfront",  shellType:"lobster", weeklyKg:8,  storage:"frozen",       pickupWindow:"10-11 PM",location:"Waterfront" },
+      { id:"seed-3", name:"Shrimp Shack - Central",    shellType:"shrimp",  weeklyKg:25, storage:"refrigerated", pickupWindow:"7-10 PM", location:"Central District" },
+      { id:"seed-4", name:"Ocean's Bounty - Midtown",  shellType:"mixed",   weeklyKg:20, storage:"frozen",       pickupWindow:"8-10 PM", location:"Midtown" },
+      { id:"seed-5", name:"The Crab Pot - Harbor",     shellType:"crab",    weeklyKg:12, storage:"frozen",       pickupWindow:"9-11 PM", location:"Harbor District" },
+      { id:"seed-6", name:"Prawn Palace - East Side",  shellType:"shrimp",  weeklyKg:18, storage:"refrigerated", pickupWindow:"6-8 PM",  location:"East Side" },
+    ];
+    let restaurants = [...seedRestaurants];
+
+    /* ──────────────────────────────────────────────
+       Toast
+    ────────────────────────────────────────────── */
+    function showToast(msg, type = "success") {
+      const t = document.getElementById("toast");
+      t.className = type;
+      t.textContent = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 3500);
+    }
+
+    /* ──────────────────────────────────────────────
+       Server health check
+    ────────────────────────────────────────────── */
+    async function checkServer() {
+      try {
+        const r = await fetch(`${API}/health`, { signal: AbortSignal.timeout(3000) });
+        if (r.ok) {
+          document.getElementById("server-dot").className = "inline-block w-2 h-2 rounded-full bg-green-500";
+          document.getElementById("server-status").textContent = "Backend server connected — data will be saved to database.xlsx";
+          // Pull live data for metrics
+          await fetchAndMergeRestaurants();
+        }
+      } catch {
+        document.getElementById("server-dot").className = "inline-block w-2 h-2 rounded-full bg-red-400";
+        document.getElementById("server-status").textContent = "Backend server offline — start server.py to enable Excel persistence";
+      }
+      updateMetrics();
+    }
+
+    /* ──────────────────────────────────────────────
+       Fetch all restaurants from server + merge with seeds
+    ────────────────────────────────────────────── */
+    async function fetchAndMergeRestaurants() {
+      try {
+        const r = await fetch(`${API}/restaurants`);
+        const data = await r.json();
+        const serverIds = new Set(data.restaurants.map(x => x.id));
+        const seedsNotInServer = seedRestaurants.filter(s => !serverIds.has(s.id));
+        restaurants = [...data.restaurants, ...seedsNotInServer];
+      } catch {
+        restaurants = [...seedRestaurants];
+      }
+      updateMetrics();
+    }
+
+    /* ──────────────────────────────────────────────
+       Navigation
+    ────────────────────────────────────────────── */
+    function showView(viewName) {
+      ["home","restaurant","lab","database"].forEach(v => {
+        document.getElementById(`view-${v}`).classList.add("hidden");
+        const btn = document.getElementById(`nav-${v}`);
+        btn.className = "px-4 py-2 rounded-xl text-sm font-semibold transition-all text-[#6E564E] hover:text-[#2C1810] hover:bg-[#F7EBE3]";
+      });
+      document.getElementById(`view-${viewName}`).classList.remove("hidden");
+      document.getElementById(`nav-${viewName}`).className =
+        "px-4 py-2 rounded-xl text-sm font-semibold transition-all text-[#9E3D23] bg-[#F5E5DA] border border-[#EBD1C0] shadow-sm";
+      if (viewName === "database") loadDatabaseView();
+    }
+
+    function updateMetrics() {
+      document.getElementById("metric-restaurants").innerText = restaurants.length;
+      const total = restaurants.reduce((s, r) => s + r.weeklyKg, 0);
+      document.getElementById("metric-capacity").innerText = `${total} kg/wk`;
+    }
+
+    /* ──────────────────────────────────────────────
+       POST: Register restaurant → save to Excel
+    ────────────────────────────────────────────── */
+    async function handleRegisterRestaurant(e) {
+      e.preventDefault();
+      const btn = document.getElementById("submit-btn");
+      btn.innerHTML = '<span class="spinner"></span> Saving…';
+      btn.disabled = true;
+
+      const newRest = {
+        id:           `user-${Date.now()}`,
+        name:         document.getElementById("rest-name").value,
+        shellType:    document.getElementById("rest-shell-type").value,
+        weeklyKg:     parseFloat(document.getElementById("rest-weekly-kg").value),
+        storage:      document.getElementById("rest-storage").value,
+        pickupWindow: document.getElementById("rest-pickup").value,
+        location:     document.getElementById("rest-location").value,
+      };
+
+      let savedToServer = false;
+      try {
+        const r = await fetch(`${API}/restaurants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newRest),
+          signal: AbortSignal.timeout(5000),
+        });
+        if (r.ok) {
+          savedToServer = true;
+          showToast("✅ Saved to database.xlsx");
+        }
+      } catch {
+        showToast("⚠️ Server offline — data saved in-memory only", "error");
+      }
+
+      restaurants.unshift(newRest);
+      updateMetrics();
+
+      btn.innerHTML = "Register Shell Waste Stream";
+      btn.disabled = false;
+
+      document.getElementById("restaurant-form").classList.add("hidden");
+      document.getElementById("register-success").classList.remove("hidden");
+      document.getElementById("success-msg").innerText =
+        `Thanks! ${newRest.name} is now supplying ~${newRest.weeklyKg} kg/week of ${newRest.shellType} shells.`;
+      document.getElementById("success-details").innerHTML = `
+        <div><strong class="text-[#2C1810]">Shell Type:</strong> <span class="capitalize">${newRest.shellType}</span></div>
+        <div><strong class="text-[#2C1810]">Weekly Quantity:</strong> ${newRest.weeklyKg} kg</div>
+        <div><strong class="text-[#2C1810]">Storage Method:</strong> <span class="capitalize">${newRest.storage}</span></div>
+        <div><strong class="text-[#2C1810]">Pickup Window:</strong> ${newRest.pickupWindow}</div>
+        <div><strong class="text-[#2C1810]">Location:</strong> ${newRest.location}</div>
+        <div class="text-xs text-[#8C736B] mt-1">${savedToServer ? "✅ Persisted to database.xlsx" : "⚠️ In-memory only (server offline)"}</div>
+      `;
+    }
+
+    function resetRegisterForm() {
+      document.getElementById("restaurant-form").reset();
+      document.getElementById("restaurant-form").classList.remove("hidden");
+      document.getElementById("register-success").classList.add("hidden");
+    }
+
+    /* ──────────────────────────────────────────────
+       GET: Load database view
+    ────────────────────────────────────────────── */
+    async function loadDatabaseView() {
+      document.getElementById("db-loading").classList.remove("hidden");
+      document.getElementById("db-table-wrap").classList.add("hidden");
+      document.getElementById("db-empty").classList.add("hidden");
+      document.getElementById("db-error").classList.add("hidden");
+
+      try {
+        const r = await fetch(`${API}/restaurants`, { signal: AbortSignal.timeout(5000) });
+        const data = await r.json();
+        const rows = data.restaurants;
+
+        document.getElementById("db-loading").classList.add("hidden");
+
+        if (rows.length === 0) {
+          document.getElementById("db-empty").classList.remove("hidden");
+          return;
+        }
+
+        const tbody = document.getElementById("db-tbody");
+        tbody.innerHTML = rows.map((row, i) => `
+          <tr class="hover:bg-[#FFF8F4] transition-colors">
+            <td class="px-5 py-3 text-[#8C736B] font-mono text-xs">${i + 1}</td>
+            <td class="px-5 py-3 font-semibold text-[#2C1810]">${row.name}</td>
+            <td class="px-5 py-3"><span class="capitalize px-2 py-0.5 bg-[#FCE3D9] text-[#9E3D23] rounded-full text-xs font-medium">${row.shellType}</span></td>
+            <td class="px-5 py-3 text-[#4A332C] font-semibold">${row.weeklyKg}</td>
+            <td class="px-5 py-3 capitalize text-[#6E564E]">${row.storage}</td>
+            <td class="px-5 py-3 text-[#6E564E]">${row.pickupWindow}</td>
+            <td class="px-5 py-3 text-[#6E564E]">${row.location}</td>
+            <td class="px-5 py-3 text-[#8C736B] text-xs">${row.registeredAt || "—"}</td>
+          </tr>
+        `).join("");
+
+        document.getElementById("db-count").textContent = `${rows.length} record${rows.length !== 1 ? "s" : ""} found`;
+        document.getElementById("db-table-wrap").classList.remove("hidden");
+
+        /* Sync metrics with live DB data */
+        const serverIds = new Set(rows.map(x => x.id));
+        const seedsNotInServer = seedRestaurants.filter(s => !serverIds.has(s.id));
+        restaurants = [...rows, ...seedsNotInServer];
+        updateMetrics();
+
+      } catch {
+        document.getElementById("db-loading").classList.add("hidden");
+        document.getElementById("db-error").classList.remove("hidden");
+      }
+    }
+
+    /* ──────────────────────────────────────────────
+       Matching Engine (unchanged logic)
+    ────────────────────────────────────────────── */
+    function matchRestaurantsToLab(lab, restList) {
+      const typeCompatible = restList.filter(r => r.shellType === lab.shellTypeNeeded || r.shellType === "mixed");
+      const volumeSufficient = typeCompatible.filter(r => r.weeklyKg >= lab.weeklyKgNeeded * 0.5);
+      const scored = volumeSufficient.map(r => {
+        let score = 0;
+        if (r.shellType === lab.shellTypeNeeded) score += 50;
+        if (r.storage === "frozen") score += 20;
+        score += Math.max(0, 20 - Math.abs(r.weeklyKg - lab.weeklyKgNeeded));
+        return { restaurant: r, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      return { bestMatch: scored[0] ?? null, otherMatches: scored.slice(1, 4) };
+    }
+
+    function handleLabSearch(e) {
+      e.preventDefault();
+      const lab = {
+        shellTypeNeeded: document.getElementById("lab-shell-type").value,
+        weeklyKgNeeded:  parseFloat(document.getElementById("lab-weekly-kg").value),
+        radiusKm:        parseInt(document.getElementById("lab-radius").value),
+        frequency:       document.getElementById("lab-frequency").value,
+        purpose:         document.getElementById("lab-purpose").value,
+      };
+      renderMatchResults(lab, matchRestaurantsToLab(lab, restaurants));
+    }
+
+    function renderMatchResults(lab, result) {
+      document.getElementById("match-results").classList.remove("hidden");
+      const bestCard    = document.getElementById("best-match-card");
+      const otherSec    = document.getElementById("other-matches-section");
+      const otherList   = document.getElementById("other-matches-list");
+
+      if (!result.bestMatch) {
+        bestCard.className = "peach-card p-8 rounded-2xl border-2 border-[#E06D53] bg-[#FFF5F0] text-center space-y-2";
+        bestCard.innerHTML = `<div class="text-3xl mb-2">⚠️</div><h4 class="text-xl font-bold text-[#8B3A24]">No Matching Suppliers Found</h4><p class="text-sm text-[#6E564E]">Try reducing weekly needs or choosing "mixed" shells.</p>`;
+        otherSec.classList.add("hidden");
+        renderAiAdvice(lab, null, []);
+        return;
+      }
+
+      const bm = result.bestMatch.restaurant, score = result.bestMatch.score;
+      bestCard.className = "peach-card p-8 rounded-2xl border-2 border-[#E06D53] bg-[#FFF8F4] space-y-6";
+      bestCard.innerHTML = `
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-3">
+              <h4 class="text-2xl font-bold text-[#2C1810]">${bm.name}</h4>
+              <span class="px-3 py-1 bg-[#FCE3D9] border border-[#F7C5B5] text-[#9E3D23] text-xs font-bold rounded-full">Top Match (${score} pts)</span>
+            </div>
+            <p class="text-sm text-[#8C736B] mt-1">📍 ${bm.location}</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-white rounded-xl border border-[#F0DCD0] text-sm">
+          <div><span class="text-xs text-[#8C736B] block font-medium">Shell Stream</span><span class="font-semibold text-[#E06D53] capitalize">${bm.shellType}</span></div>
+          <div><span class="text-xs text-[#8C736B] block font-medium">Weekly Supply</span><span class="font-semibold text-[#2C1810]">${bm.weeklyKg} kg / week</span></div>
+          <div><span class="text-xs text-[#8C736B] block font-medium">Storage Method</span><span class="font-semibold text-[#D95D39] capitalize">${bm.storage}</span></div>
+          <div><span class="text-xs text-[#8C736B] block font-medium">Pickup Window</span><span class="font-semibold text-[#2C1810]">${bm.pickupWindow}</span></div>
+        </div>`;
+
+      if (result.otherMatches.length > 0) {
+        otherSec.classList.remove("hidden");
+        otherList.innerHTML = result.otherMatches.map(m => `
+          <div class="peach-card p-5 rounded-xl space-y-3">
+            <div class="flex justify-between items-start">
+              <h5 class="font-bold text-[#2C1810]">${m.restaurant.name}</h5>
+              <span class="text-xs text-[#8C736B] bg-[#FAF3EE] px-2 py-0.5 rounded font-mono border border-[#F0DCD0]">${m.score} pts</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2 text-xs text-[#6E564E]">
+              <div>Type: <span class="text-[#E06D53] font-semibold capitalize">${m.restaurant.shellType}</span></div>
+              <div>Supply: <span class="text-[#2C1810] font-semibold">${m.restaurant.weeklyKg} kg/wk</span></div>
+              <div>Storage: <span class="text-[#D95D39] capitalize">${m.restaurant.storage}</span></div>
+              <div>Location: <span>${m.restaurant.location}</span></div>
+            </div>
+          </div>`).join("");
+      } else { otherSec.classList.add("hidden"); }
+
+      renderAiAdvice(lab, bm, result.otherMatches.map(o => o.restaurant));
+    }
+
+    function renderAiAdvice(lab, bestMatch, altMatches) {
+      const c = document.getElementById("ai-advisor-content");
+      if (!bestMatch) { c.innerHTML = `<p class="text-[#8B3A24]">No candidates available for AI risk assessment.</p>`; return; }
+      const isExact = bestMatch.shellType === lab.shellTypeNeeded, isFrozen = bestMatch.storage === "frozen";
+      const summary = `Primary recommendation: ${bestMatch.name}. ${isExact ? `Exact match for ${lab.shellTypeNeeded} shells.` : `Mixed shells capable of fulfilling raw material needs.`} Weekly yield (${bestMatch.weeklyKg} kg) covers ${Math.round(bestMatch.weeklyKg / lab.weeklyKgNeeded * 100)}% of your batch.`;
+      const logistics = `Pickup window: ${bestMatch.pickupWindow} at ${bestMatch.location}. ${isFrozen ? "Pre-frozen — enzymatic degradation of chitin prevented." : "Refrigerated — transport within 24 h required."}`;
+      const risks = [];
+      if (!isFrozen) risks.push("Refrigerated storage carries higher spoilage risk during transit.");
+      if (bestMatch.weeklyKg < lab.weeklyKgNeeded) risks.push(`Supply (${bestMatch.weeklyKg} kg/wk) is below request (${lab.weeklyKgNeeded} kg/wk); supplement with secondary matches.`);
+      if (lab.frequency === "biweekly" && !isFrozen) risks.push("Bi-weekly pickup requires expanded supplier freezer capacity.");
+      if (risks.length === 0) risks.push("Low risk profile: storage and volume closely match lab specifications.");
+      c.innerHTML = `
+        <div><h5 class="font-bold text-[#2C1810] mb-1">Strategic Recommendation</h5><p class="text-[#4A332C] leading-relaxed">${summary}</p></div>
+        <div><h5 class="font-bold text-[#2C1810] mb-1">Logistics & Cold Chain Notes</h5><p class="text-[#4A332C] leading-relaxed">${logistics}</p></div>
+        <div><h5 class="font-bold text-[#2C1810] mb-1">Risk Factors</h5><ul class="list-disc list-inside space-y-1 text-[#4A332C]">${risks.map(r => `<li>${r}</li>`).join("")}</ul></div>`;
+    }
+
+    /* ──────────────────────────────────────────────
+       Boot
+    ────────────────────────────────────────────── */
+    checkServer();
+  </script>
+</body>
+</html>
